@@ -137,7 +137,7 @@ create table if not exists projet.possede(
 
 
 
--- Table possede
+-- Table reservation
 create table if not exists projet.reservation(
 
 	date_reservation date not null,
