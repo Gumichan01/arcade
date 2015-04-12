@@ -97,6 +97,8 @@ create table if not exists projet.client(
 
 	nom varchar(32) not null,
 	prenom varchar(32) not null,
+	numero_telephone int8 unique not null,
+	courriel varchar(64) not null,
 
 	adresse integer references projet.adresse (id_lieu)
 
