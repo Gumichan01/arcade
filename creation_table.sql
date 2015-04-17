@@ -15,8 +15,8 @@ create schema if not exists projet;
 
 
 -- Suppression des tables
-drop table if exists projet.reservation;
-drop table if exists projet.possede;
+drop table if exists projet.reservation cascade;
+drop table if exists projet.possede cascade;
 drop table if exists projet.salle_arcade cascade;
 drop table if exists projet.client cascade;
 drop table if exists projet.proprietaire cascade;
@@ -27,13 +27,13 @@ drop table if exists projet.adresse;
 
 -- Suppression des types
 drop type if exists genre_jeu;
-drop type if exists type_r;
+drop type if exists type_prestation;
 
 
 -- Création des types 
-create type  genre_jeu as enum ('SHOOTER','ACTION','COMBAT','BEATEMALL','AVENTURE');
+create type genre_jeu as enum ('SHOOTER','ACTION','COMBAT','BEATEMALL','AVENTURE');
 
-create type  type_r as enum ('ANNIV','MARIAGE','PROFESSIONNEL','SALON');
+create type type_prestation as enum ('ANNIV','MARIAGE','PROFESSIONNEL','SALON');
 
 
 
@@ -144,7 +144,7 @@ create table if not exists projet.reservation(
 	date_reservation date not null,
 	heure time not null,
 	duree integer not null check (duree > 0),
-	type type_r not null,
+	prestation type_prestation not null,
 
 	id_client integer references projet.client (id_pers),
 	id_arcade integer references projet.salle_arcade (id_arcade),
