@@ -32,7 +32,6 @@ drop type if exists type_prestation;
 
 -- Création des types 
 create type genre_jeu as enum ('SHOOTER','ACTION','COMBAT','BEATEMALL','AVENTURE');
-
 create type type_prestation as enum ('ANNIV','MARIAGE','PROFESSIONNEL','SALON');
 
 
@@ -88,7 +87,6 @@ create table if not exists projet.proprietaire(
 );
 
 
-
 -- Table client
 create table if not exists projet.client(
 
@@ -102,7 +100,6 @@ create table if not exists projet.client(
 	adresse integer references projet.adresse (id_lieu)
 
 );
-
 
 
 -- Table salle_arcade
@@ -125,8 +122,6 @@ create table if not exists projet.salle_arcade(
 );
 
 
-
-
 -- Table possede
 create table if not exists projet.possede(
 
@@ -135,7 +130,6 @@ create table if not exists projet.possede(
 	primary key (id_arcade,id_jeu)
 
 );
-
 
 
 -- Table reservation
@@ -157,7 +151,6 @@ create table if not exists projet.reservation(
 	Insertion
 **/
 
-
 -- Insertions dans les adresses
 insert into projet.adresse (departement,ville,rue) values
 	(75,'PARIS','5, Boulevard des Italiens'),
@@ -165,6 +158,7 @@ insert into projet.adresse (departement,ville,rue) values
 	(92,'CLICHY','7, Rue du Bac dAsnières'),
 	(38,'ECHIROLLES','19, Avenue de Gruglisco'),
 	(78,'ORGEVAL','Route des Quarante Sous');
+
 
 
 -- Insertion dans les Clients
@@ -175,10 +169,12 @@ insert into projet.client (nom,prenom,numero_telephone,courriel,adresse) values
 	('Pop','Merami',0147586432,'merapop@mail.fr',3);
 
 
+
 -- Insertion dans les Propriétaires
 insert into projet.proprietaire (nom,prenom,capital,numero_telephone,courriel,adresse) values
 	('BOOLCENTER','-',200000.00,0100000000,'boolcenter-info@mail.com',5),
 	('LTDM','-',1000000.00,0140130808,'ltdn-info@orange.fr',1);
+
 
 
 -- Insertion dans les salles d'arcades
@@ -186,7 +182,6 @@ insert into projet.salle_arcade (nom,surface,tarif_horaire,machines,prix_jeton,c
 	('LA TETE DANS LES NUAGES',1500, 50.00, 150,2.00, 800, '10:30', '2:00',2,1),
 	('BOLLCENTER ECHIROLLES',2000,75.00,200,1.00,900,'10:00','01:00',1,4),
 	('BOLLCENTER ORGEVAL',1750,60.00,150,2.00,800,'10:00','00:30',1,5);
-
 
 
 
