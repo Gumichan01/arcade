@@ -1,19 +1,9 @@
 ﻿-- ----------------------------------------- --
 -- BD. ARCADE - Université Diderot-Paris7	 --
--- auteurs : DIBO Pierre - JEAN-PIERRE Luxon --
--- version : 0.2							 --
+-- auteurs : DIBO Pierre - JEAN-PIERRE Luxon --						 --
 -- date création : 2015-04-26				 --
 -- ----------------------------------------- --
 
-
-/*
-http://blog.guillaume.lelarge.info/index.php/post/2006/02/07/431-vacances-en-pl-pgsql
-http://www.apsql.com/articles/JoursFeries.html
-http://www.depesz.com/2013/02/25/variables-in-sql-what-how-when/
-http://sqlpro.developpez.com/cours/sqlaz/ensembles/
-http://stackoverflow.com/questions/1912095/how-to-insert-a-value-that-contains-an-apostrophe-single-quote
-http://www.postgresql.org/docs/9.1/static/functions-datetime.html | http://docs.postgresql.fr/8.2/functions-datetime.html
-*/
 
 -- Suppression du schema
 drop schema if exists projet cascade;
@@ -46,25 +36,12 @@ create type type_r as enum ('ANNIV','MARIAGE','PROFESSIONNEL','SALON');
 -- Suppression des functions
 drop function if exists create_facture(integer, integer, integer, type_r);
 drop function if exists insert_reservation(integer, integer, date, date, integer, time, integer, type_r, integer);
-/*drop function if exists paques(integer);
-drop function if exists ascension(integer);
-drop function if exists jourFerie(date);*/
+
 
 /**
 	Creation des tables
 **/
 
--- Table facture
-create table if not exists projet.facture(
-	idFacture serial,
-	jeton_shooter integer,
-	jeton_action integer,
-	jeton_combat integer,
-	jeton_beatemall integer,
-	jeton_aventure integer,
-	prix_facturation float,
-	constraint pk_idFacture primary key (idFacture)
-);
 
 -- Table adresse
 create table if not exists projet.adresse(
@@ -75,6 +52,7 @@ create table if not exists projet.adresse(
 	constraint pk_idLieu primary key (idLieu)
 );
 
+
 -- Table jeu
 create table if not exists projet.jeu(
 	idJeu serial,
@@ -84,6 +62,7 @@ create table if not exists projet.jeu(
 	constraint pk_idJeu primary key (idJeu),
 	constraint ck_annee check (annee > 1970)
 );
+
 
 -- Table proprietaire
 create table if not exists projet.proprietaire(
@@ -99,6 +78,7 @@ create table if not exists projet.proprietaire(
 	constraint fk_adresse_idLieu foreign key (adresse) references projet.adresse (idLieu)
 );
 
+
 -- Table client
 create table if not exists projet.client(
 	idClient serial,
@@ -110,6 +90,7 @@ create table if not exists projet.client(
 	constraint pk_idClient primary key (idClient),
 	constraint fk_adresse_idLieu foreign key (adresse) references projet.adresse (idLieu)
 );
+
 
 -- Table salle_arcade
 create table if not exists projet.salle_arcade(
@@ -132,6 +113,7 @@ create table if not exists projet.salle_arcade(
 	constraint fk_proprietaire_idProprietaire foreign key (proprietaire) references projet.proprietaire (idProprietaire)
 );
 
+
 -- Table possede
 create table if not exists projet.possede(
 	arcade integer,
@@ -140,6 +122,20 @@ create table if not exists projet.possede(
 	constraint fk_arcade_idArcade foreign key (arcade) references projet.salle_arcade (idArcade),
 	constraint fk_jeu_idJeu foreign key (jeu) references projet.jeu (idJeu)
 );
+
+
+-- Table facture
+create table if not exists projet.facture(
+	idFacture serial,
+	jeton_shooter integer,
+	jeton_action integer,
+	jeton_combat integer,
+	jeton_beatemall integer,
+	jeton_aventure integer,
+	prix_facturation float,
+	constraint pk_idFacture primary key (idFacture)
+);
+
 
 -- Table reservation
 create table if not exists projet.reservation(
@@ -161,9 +157,12 @@ create table if not exists projet.reservation(
 	constraint fk_facture_idFacture foreign key (facture) references projet.facture (idFacture) 
 );
 
+
+
 /**
 	Creation des fonctions et triggers
 **/
+
 
 -- Function create_facture
 create or replace function create_facture(arcade in integer, duree in integer, nb_jeton in integer, prestation in type_r) returns integer as $$
@@ -226,6 +225,7 @@ begin
 end;
 $$ language 'plpgsql';
 
+
 -- Function insert_reservation
 create or replace function insert_reservation(client in integer, arcade in integer, dateDemandeReservation in date, dateReservation in date, nombreDePersonne in integer, heure in time, duree in integer, prestation in type_r, nombreJeton in integer) returns void as $$
 declare
@@ -285,108 +285,11 @@ begin
 end;
 $$ language 'plpgsql';
 
-/* TODO
--- Function paques
-create or replace function paques(annee in integer) returns date as $$
-declare
-	a integer;
-	b integer;
-	r date;
-begin
-	a := (19 * (annee % 19) + 24) % 30;
-	b := (2 * (annee % 4) + 4 * (annee % 7) + 6 * a + 5) % 7;
-	select (annee::text || '-03-31')::date + (a + b -9) into r;
-	return r;
-end;
-$$ language 'plpgsql';
 
--- Function ascension
-create or replace function ascension(annee in integer) returns date as $$
-declare
-	r date;
-begin
-	select paques(annee)::date + 40 into r;
-	select r + (4 - extract(dow from r))::integer into r;
-	return r;
-end;
-$$ language 'plpgsql';
-
--- Function jourFerie
-
-* Fonction qui établi si le jour passé en paramètre est férie
-* Base de calcul pour la france
-* 1er janvier
-* 1er mai
-* 8 mai
-* 14 juillet
-* 15 aout
-* 1er novembre
-* 11 novembre
-* 25 décembre
-* Pâques et Lundi de Pâques
-* Jeudi de l'ascension
-* Pentecôte et Lundi de Pentecôte
-
-create function jourFerie(dateDonnee date) returns boolean as $$
-declare
-	annee integer;
-	mois integer;
-	jour integer;
-	datePaques date;
-	dateAscension date;
-	datePentecote date;
-begin
-	select extract(year from dateDonnee) into annee;
-	select extract(month from dateDonnee) into mois;
-	select extract(day from dateDonnee) into jour;
-	select paques(annee) into datePaques;
-	select ascension(annee) into dateAscension;
-	select datePaques + interval '49 day' into datePentecote;
-	
-	if (mois = 1 and jour = 1) then
-		return true; -- 1er janvier
-	end if;
-	
-	if (mois = 5 and (jour = 1 or jour = 8)) then 
-		return true; -- 1er ou 8 mai
-	end if;
-		
-	if (mois = 7 and jour = 14) then 
-		return true; -- 14 juillet
-	end if;
-	
-	if (mois = 8 and jour = 15) then 
-		return true; -- 15 aout
-	end if;
-	
-	if (mois = 11 and (jour = 1 or jour = 11)) then 
-		return true; -- 1er ou 11 novembre
-	end if;
-	
-	if (mois = 12 and jour = 25) then 
-		return true; -- 25 décembre
-	end if;
-	
-	if (dateDonnee = datePaques or dateDonnee = (select datePaques + interval '1 day')) then 
-		return true;
-	end if;
-	
-	if (dateDonnee = dateAscension) then 
-		return true;
-	end if;
-	
-	if (dateDonnee = datePentecote or dateDonnee = (select datePentecote + interval '1 day')) then 
-		return true;
-	end if;
-	
-	return false;
-end;
-$$ language 'plpgsql';
--- FIN TODO
-*/
 /**
 	Insertion valeurs dans les tables
 **/
+
 
 -- Insertions dans les adresses
 insert into projet.adresse (departement, ville, rue) values
@@ -396,12 +299,14 @@ insert into projet.adresse (departement, ville, rue) values
 	(38, 'ECHIROLLES', '19, Avenue de Gruglisco'),
 	(78, 'ORGEVAL', 'Route des Quarante Sous');
 
+
 -- Insertion dans les Clients
 insert into projet.client (nom, prenom, numero_telephone, courriel, adresse) values
 	('Miku', 'Gumichan01', 0123456789, 'gumichan01@mail.fr', 1),
 	('Hastune', 'Miku', 0147586932, 'mikuhatsune@mail.fr', 2),
 	('Megurine', 'Luka', 0123156789, 'megu.luka@mail.fr', 2),
 	('Pop', 'Merami', 0147586432, 'merapop@mail.fr', 3);
+
 
 -- Insertion dans les Propriétaires
 insert into projet.proprietaire (nom, prenom, capital, numero_telephone, courriel, adresse) values
@@ -415,6 +320,7 @@ insert into projet.salle_arcade (nom, surface, tarif_horaire, machines, prix_jet
 	('BOLLCENTER ECHIROLLES', 2000, 75.00, 200, 1.00, 900, '10:00', '01:00', 1, 2),
 	('BOLLCENTER ORGEVAL', 1750, 60.00, 150, 2.00, 800, '10:00', '00:30', 1, 4);
 
+
 -- Insertion des Jeux
 insert into projet.jeu (nomjeu, genre, annee) values
 	('DodonPachi', 'SHOOTER', 1998),
@@ -424,29 +330,17 @@ insert into projet.jeu (nomjeu, genre, annee) values
 	('Street Fighter Alpha', 'COMBAT', 1996),
 	('Street of Rage', 'BEATEMALL', 1991);
 
+
+
 -- Insertion des couple Jeu/Salle
 insert into projet.possede values
 	(1,1),(1,2),(2,1),(2,6),
 	(3,2),(1,3),(2,3),(1,4),
 	(1,6),(3,6),(2,4),(3,3);
 
+
+
 -- Insertion dans reservation
-
-/*insert into projet.reservation (client,arcade,dateDemandeReservation,dateReservation,nombreDePersonne,heure,duree,prestation,nombreJeton) values
-	(4, 3, '03/01/2015', '11/01/2015', 69, '20:00:00', 8, 'PROFESSIONNEL', 1507),
-	(4, 3, '27/03/2015', '11/04/2015', 113, '20:00:00', 8, 'MARIAGE', 2008),
-	(1, 1, '02/05/2015', '10/05/2015', 50, '10:00:00', 8, 'PROFESSIONNEL', 1560),
-	(3, 2, '18/02/2014', '21/02/2014', 20, '18:00:00', 4, 'ANNIV', 900),
-	(3, 3, '11/03/2014', '14/03/2014', 5, '08:00:00', 1, 'ANNIV', 600),
-	(2, 1, '01/07/2014', '02/07/2014', 300, '09:00:00', 10, 'SALON', 12033),
-	(2, 1, '02/03/2014', '03/03/2014', 444, '09:00:00', 10, 'SALON', 14571),
-	(2, 1, '01/03/2014', '04/03/2014', 800, '09:00:00', 10, 'SALON', 29585),
-	(2, 1, '27/01/2014', '05/03/2014', 712, '09:00:00', 10, 'SALON', 2264),
-	(2, 1, '03/05/2015', '19/05/2015', 155, '09:00:00', 10, 'SALON', 8716),
-	(2, 1, '08/04/2014', '10/04/2014', 477, '09:00:00', 10, 'SALON', 11111),
-	(2, 1, '03/05/2015', '09/10/2016', 711, '09:00:00', 10, 'SALON', 31299),
-	(3, 1, '03/05/2015', '24/04/2016', 711, '10:00:00', 10, 'SALON', 31299);*/
-
 select insert_reservation(4, 3, '03/01/2015', '11/01/2015', 69, '20:00:00', 8, 'PROFESSIONNEL', 1507);
 select insert_reservation(4, 3, '27/03/2015', '11/04/2015', 113, '20:00:00', 8, 'MARIAGE', 2008);
 select insert_reservation(1, 1, '02/05/2015', '10/05/2015', 50, '10:00:00', 8, 'PROFESSIONNEL', 1560);
@@ -460,16 +354,6 @@ select insert_reservation(2, 1, '03/05/2015', '19/05/2015', 155, '09:00:00', 10,
 select insert_reservation(2, 1, '08/04/2014', '10/04/2014', 477, '09:00:00', 10, 'SALON', 11111);
 select insert_reservation(2, 1, '03/05/2015', '09/10/2016', 711, '09:00:00', 10, 'SALON', 31299);
 select insert_reservation(3, 1, '03/05/2015', '24/04/2016', 711, '10:00:00', 10, 'SALON', 31299 );
-
-
-
-
-
-
-
-
-
-
 
 
 
