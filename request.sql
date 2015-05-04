@@ -1,4 +1,12 @@
 
+
+/*
+	Je remets cette commande
+	car lors de la connexion
+	il est réinitialisé
+*/
+set datestyle to DMY;
+
 /* Requêtes imposées */
 
 ﻿-- 1)Quel a été le taux d’occupation d’un lieu en 2014 ?
@@ -83,13 +91,14 @@ order by depense desc;
 --execute client_depense_mois_2014(null);
 
 
-/* Requetes inventées */
+/* Requetes s */
 
--- 1) Quels sont les propriétaire dont le chiffre d'affaire de l'année 2014 dépasse 5% du capital de départ ?
+-- 1) Quels sont les propriétaires dont le chiffre d'affaire de l'année 2014 dépasse 5% du capital de départ ?
+-- Requête avec une jointure externe (FULL OUTER JOIN et RIGHT OUTER JOIN) avec GROUP BY
 
-\echo "Requete invente 1"
-deallocate requete_inventée_1;
-prepare requete_inventée_1(void) as
+\echo "Requete inventée 1"
+deallocate requete__1;
+prepare requete__1(void) as
 select proprietaire, p_ca.*, capital 
 from projet.proprietaire join projet.salle_arcade 
 on proprietaire=idProprietaire 
@@ -103,31 +112,93 @@ order by chiffre_affaire desc) p_ca
 on idArcade=p_ca.arcade
 where  p_ca.chiffre_affaire >= capital / 20;
 
---execute requete_inventée_1(null);
+--execute requete__1(null);
 
 
 -- 2) Quel est le client ayant le plus dépensé en 2014 dont l'adresse de la salle d'arcade est la même que son lieu d'habitation ?
+-- Requête avec HAVING, GROUP BY et des sous-requetes dans le HAVING
 
-\echo "Requete invente 2"
-deallocate requete_inventée_2;
-prepare requete_inventée_2(void) as
+\echo "Requete inventée 2"
+deallocate requete__2;
+prepare requete__2(void) as
 select client, arcade, sum(prix_facturation) as depense from projet.facture join projet.reservation on facture=idFacture
 where dateReservation between '01/01/2014' and '31/12/2014'
 group by client, arcade
 having (select adresse from projet.client where idClient=client)=(select adresse from projet.salle_arcade where idArcade=arcade)
 order by depense desc;
 
---execute requete_inventée_2(null);
+--execute requete__2(null);
 
 
--- 3) Quelle sont les jeux possedés par la salle d'arcade ayant le plus de reservations dans l'année ?
-\echo "Requete invente 3"
+-- 3) Quel est le nom de la salle d'arcade ayant eu le plus de reservation durant une année donnée ?
+-- L'année donnée en paramètre est soit une année passé, soit l'année courant, jamais une année future
+-- Utilisation de WITH et sous-requête dans le FROM et GROUP
+
+\echo "Requete inventée 3"
+-- Avec une reqête intermédiaire c'est mieux
+deallocate requete__3;
+prepare requete__3(integer) as
+with arcadePlusfrequente 
+as (select arcade as id, count(arcade) as nbReservation 
+	from projet.reservation 
+	where $1<=extract(year from (select current_date)) and $1=extract(year from dateReservation) 
+	group by id 
+	order by nbReservation desc 
+	limit 1)
+select listeArcade.nom as nom_salle
+from arcadePlusfrequente foo,(select idArcade, nom from projet.salle_arcade) as listeArcade
+where foo.id=listeArcade.idArcade;
 
 
--- 4) Lister les salles d'arcade avec leur nom et le nombre de reservation.
-\echo "Requete invente 4"
+
+-- 4) Quelle sont les jeux possedés par la salle d'arcade qui a le plus de reservations dans l'année courante ?
+-- Sous-requête corrélée
+
+\echo "Requete inventée 4"
+deallocate requete__4;
+prepare requete__4(integer) as
+with arcadePlusfrequente 
+as (select arcade as id, count(arcade) as nbReservation 
+	from projet.reservation 
+	where $1<=extract(year from (select current_date)) and $1=extract(year from dateReservation) 
+	group by id 
+	order by nbReservation desc 
+	limit 1)
+select nomjeu
+from projet.jeu
+where idjeu in (select jeu as idjeu 
+				from arcadePlusfrequente foo, projet.possede
+				where arcade=id);
 
 
+-- 5) Lister les salles d'arcade avec leur nom et le nombre total de reservation depuis leur existence
+\echo "Requete inventée 5"
+deallocate requete__5;
+prepare requete__5(void) as
+select nomArcade, nbReservation
+from (select idArcade, nom as nomArcade from projet.salle_arcade) as listeArcade, 
+	(select arcade as id, count(arcade) as nbReservation from projet.reservation group by id) as reserv
+where id = idArcade;
+
+
+-- 6) Quels sont les clients qui ont reservé une salle d'arcade donnée à une autre année donnée en parametre ?
+-- L'année doit être inférieure ou égale à l'année courante
+\echo "Requete inventée 6"
+
+deallocate requete__6;
+prepare requete__6(varchar,integer) as
+select distinct nom, prenom 
+from (select idarcade, nom as nomArcade 
+	  from projet.salle_arcade 
+	  where nom=upper($1)) as arcade2
+cross join (select arcade, client as idclt, dateReservation 
+			from projet.reservation 
+			where $2<=extract(year from (select current_date)) 
+			and extract(year from dateReservation)=$2 ) as reserv
+cross join (select idClient, nom, prenom
+			from projet.client) as client2
+where idarcade=arcade 
+and idClient=idclt;
 
 
 
