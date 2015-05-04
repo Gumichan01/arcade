@@ -252,10 +252,11 @@ begin
 	end if;
 	
 	
-	select count(r.*) from projet.reservation r where r.arcade=$2 
-	and r.dateReservation=$4
-	and $6 between r.heure and r.heure + cast(r.duree || ' hours' as interval)
-	and $6 + cast($7 || ' hours' as interval) between r.heure and r.heure + cast(r.duree || ' hours' as interval)
+	select count(*) from 
+	(select * from projet.reservation r where r.arcade=$2 
+	and r.dateReservation=$4) dat
+	where $6 between dat.heure and dat.heure + cast(dat.duree || ' hours' as interval)
+	or ($6 + cast($7 || ' hours' as interval) between dat.heure and dat.heure + cast(dat.duree || ' hours' as interval))
 	into nb_row;
 	
 	if(nb_row = 1) then
@@ -354,9 +355,4 @@ select insert_reservation(2, 2, '03/05/2015', '19/05/2015', 155, '09:00:00', 10,
 select insert_reservation(2, 1, '08/04/2014', '10/04/2014', 477, '09:00:00', 10, 'SALON', 11111);
 select insert_reservation(4, 2, '03/05/2015', '09/10/2015', 711, '09:00:00', 10, 'SALON', 31299);
 select insert_reservation(3, 1, '03/05/2015', '24/04/2016', 711, '10:00:00', 10, 'SALON', 31299 );
-
-
-
-
-
-
+select insert_reservation(4, 1, '03/05/2015', '09/10/2015', 711, '08:00:00', 4, 'SALON', 31299);
