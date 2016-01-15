@@ -12,6 +12,6 @@ Auteurs :
 
 Ce dossier contient les fichiers suivants :
 
-  * creatio_table.sql : création de tables
+  * creation_table.sql : création de tables
   * request.sql : requêtes SQL
   * README : Le fichier ci-contre
